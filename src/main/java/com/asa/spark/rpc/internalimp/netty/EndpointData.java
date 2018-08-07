@@ -2,6 +2,8 @@ package com.asa.spark.rpc.internalimp.netty;
 
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpoint;
 
+import java.util.Objects;
+
 /**
  * @author andrew_asa
  * @date 2018/8/5.
@@ -62,5 +64,26 @@ public class EndpointData {
     public void setInbox(Inbox inbox) {
 
         this.inbox = inbox;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof EndpointData)) {
+            return false;
+        }
+        EndpointData data = (EndpointData) o;
+        return Objects.equals(name, data.name) &&
+                Objects.equals(endpoint, data.endpoint) &&
+                Objects.equals(ref, data.ref);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(name, endpoint, ref);
     }
 }

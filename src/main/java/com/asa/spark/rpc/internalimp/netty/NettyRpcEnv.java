@@ -9,6 +9,7 @@ import com.asa.spark.rpc.serializer.JavaSerializerInstance;
 import com.asa.spark.rpc.serializer.SerializationStream;
 
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
 /**
@@ -66,10 +67,16 @@ public class NettyRpcEnv extends RpcEnv {
         return conf;
     }
 
+    public ByteBuffer serialize(Object content) throws Exception {
+
+        return javaSerializerInstance.serialize(content);
+    }
+
     /**
      * Returns [[SerializationStream]] that forwards the serialized bytes to `out`.
      */
-    public SerializationStream serializeStream(OutputStream out){
+    public SerializationStream serializeStream(OutputStream out) {
+
         return javaSerializerInstance.serializeStream(out);
     }
 }

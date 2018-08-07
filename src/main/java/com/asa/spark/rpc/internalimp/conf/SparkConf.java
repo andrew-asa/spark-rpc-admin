@@ -1,6 +1,7 @@
 package com.asa.spark.rpc.internalimp.conf;
 
 import com.asa.spark.rpc.utils.CommonUtils;
+import com.asa.spark.rpc.utils.JavaUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,7 +70,7 @@ public class SparkConf {
 
     public long getTimeAsMs(String key, String defaultValue) {
 
-        return CommonUtils.timeStringAsMs(getOption(key, defaultValue));
+        return JavaUtils.timeStringAsMs(getOption(key, defaultValue));
     }
 
     static {

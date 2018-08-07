@@ -60,17 +60,27 @@ public abstract class RpcEndpointRef {
     /**
      * Send a message to the corresponding [[RpcEndpoint.receiveAndReply]] and get its result within a
      * specified timeout, throw an exception if this fails.
-     *
+     * <p>
      * Note: this is a blocking action which may cost a lot of time, so don't call it in a message
      * loop of [[RpcEndpoint]].
      *
      * @param message the message to send
      * @param timeout the timeout duration
-     * @tparam T type of the reply message
      * @return the reply message from the corresponding [[RpcEndpoint]]
+     * @tparam T type of the reply message
      */
     //def askSync[T: ClassTag](message: Any, timeout: RpcTimeout): T = {
     //    val future = ask[T](message, timeout)
     //    timeout.awaitResult(future)
     //}
+
+    /**
+     * 获取名字
+     *
+     * @return
+     */
+    public String getName() {
+
+        return name;
+    }
 }

@@ -15,6 +15,13 @@ public class RpcMessage implements InboxMessage {
 
     private NettyRpcCallContext context;
 
+    public RpcMessage(RpcAddress senderAddress, Object content, NettyRpcCallContext context) {
+
+        this.senderAddress = senderAddress;
+        this.content = content;
+        this.context = context;
+    }
+
     public RpcAddress getSenderAddress() {
 
         return senderAddress;

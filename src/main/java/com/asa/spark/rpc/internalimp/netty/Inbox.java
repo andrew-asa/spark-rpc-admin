@@ -1,12 +1,10 @@
 package com.asa.spark.rpc.internalimp.netty;
 
-import com.asa.spark.rpc.expection.SparkException;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpoint;
 import com.asa.spark.rpc.internalimp.endpoint.ThreadSafeRpcEndpoint;
 import com.asa.spark.rpc.internalimp.netty.msg.InboxMessage;
-import com.asa.spark.rpc.internalimp.netty.msg.InboxMessageType;
 import com.asa.spark.rpc.internalimp.netty.msg.OnStart;
-import com.asa.spark.rpc.internalimp.netty.msg.RpcMessage;
+import com.asa.spark.rpc.internalimp.netty.msg.OnStop;
 import com.asa.spark.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,5 +111,39 @@ public class Inbox {
                 default:
             }
         }
+    }
+
+    public void post(InboxMessage message) {
+
+        if (stopped) {
+            // We already put "OnStop" into "messages", so we should drop further messages
+            onDrop(message);
+        } else {
+            messages.add(message);
+        }
+    }
+
+    protected void onDrop(InboxMessage message) {
+
+        LOGGER.warn("Drop $message because $endpointRef is stopped");
+    }
+
+    public synchronized void stop() {
+        // The following codes should be in `synchronized` so that we can make sure "OnStop" is the last
+        // message
+        if (!stopped) {
+            // We should disable concurrent here. Then when RpcEndpoint.onStop is called, it's the only
+            // thread that is processing messages. So `RpcEndpoint.onStop` can release its resources
+            // safely.
+            enableConcurrent = false;
+            stopped = true;
+            messages.add(new OnStop());
+            // Note: The concurrent events in messages will be processed one by one.
+        }
+    }
+
+    public synchronized boolean isEmpty() {
+
+        return messages.isEmpty();
     }
 }

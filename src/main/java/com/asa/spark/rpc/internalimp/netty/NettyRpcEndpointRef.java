@@ -21,7 +21,7 @@ public class NettyRpcEndpointRef extends RpcEndpointRef {
         super();
         this.conf = conf;
         this.endpointAddress = endpointAddress;
-        this.rpcEnv =rpcEnv;
+        this.rpcEnv = rpcEnv;
     }
 
     @Override
@@ -34,12 +34,15 @@ public class NettyRpcEndpointRef extends RpcEndpointRef {
         return endpointAddress;
     }
 
-    public  String getAddr() {
+    public String getAddr() {
+
         return endpointAddress.getRpcAddress().toString();
 
     }
 
+    @Override
     public String getName() {
+
         return endpointAddress.getName();
     }
 }

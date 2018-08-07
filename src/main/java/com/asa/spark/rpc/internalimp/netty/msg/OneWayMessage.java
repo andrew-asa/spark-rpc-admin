@@ -12,6 +12,12 @@ public class OneWayMessage implements InboxMessage {
 
     private Object content;
 
+    public OneWayMessage(RpcAddress senderAddress, Object content) {
+
+        this.senderAddress = senderAddress;
+        this.content = content;
+    }
+
     public RpcAddress getSenderAddress() {
 
         return senderAddress;
