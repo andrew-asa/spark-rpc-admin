@@ -1,4 +1,4 @@
-package com.asa.spark.rpc.internalimp.netty.msg;
+package com.asa.spark.rpc.internalimp.netty.msg.in;
 
 import com.asa.spark.rpc.internalimp.addr.RpcAddress;
 import com.asa.spark.rpc.internalimp.io.out.ByteBufferOutputStream;

@@ -1,4 +1,4 @@
-package com.asa.spark.rpc.internalimp.netty.msg;
+package com.asa.spark.rpc.internalimp.netty.msg.in;
 
 /**
  * @author andrew_asa
