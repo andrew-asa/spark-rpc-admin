@@ -4,6 +4,8 @@ import com.asa.spark.rpc.expection.SparkException;
 import com.asa.spark.rpc.internalimp.addr.RpcAddress;
 import com.asa.spark.rpc.internalimp.common.network.client.TransportClient;
 import com.asa.spark.rpc.internalimp.netty.msg.OutboxMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
@@ -30,6 +32,8 @@ public class Outbox {
     private boolean draining = false;
 
     private NettyStreamManager streamManager;
+
+    Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
 
     public Outbox(NettyRpcEnv nettyEnv, RpcAddress address) {
@@ -81,7 +85,7 @@ public class Outbox {
             }
             if (client == null) {
                 // There is no connect task but client is null, so we need to launch the connect task.
-                launchConnectTask()
+                launchConnectTask();
                 return;
             }
             if (draining) {
@@ -96,28 +100,19 @@ public class Outbox {
         }
         while (true) {
             try {
-                val _client = synchronized {
-                    client
-                }
-                if (_client != null) {
-                    message.sendWith(_client)
-                } else {
-                    assert (stopped == true)
-                }
-            } catch {
-                case NonFatal(e) =>
-                    handleNetworkFailure(e)
-                    return
+                message.sendWith(client);
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
+                return;
+
             }
-            synchronized {
-                if (stopped) {
-                    return
-                }
-                message = messages.poll();
-                if (message == null) {
-                    draining = false;
-                    return;
-                }
+            if (stopped) {
+                return;
+            }
+            message = messages.poll();
+            if (message == null) {
+                draining = false;
+                return;
             }
         }
     }
@@ -129,16 +124,21 @@ public class Outbox {
             @Override
             public Object call() throws Exception {
 
-                val _client = nettyEnv.createClient(address);
-
+                TransportClient _client = nettyEnv.createClient(address);
+                synchronized (Outbox.this) {
+                    client = _client;
+                    if (stopped) {
+                        closeClient();
+                    }
+                }
+                drainOutbox();
                 return null;
             }
         });
-
     }
 
-    private TransportClient createClient(RpcAddress address) {
-
-        return clientFactory.createClient(address.getHost(), address.getPort());
+    private synchronized void closeClient() {
+        // Just set client to null. Don't close it in order to reuse the connection.
+        client = null;
     }
 }

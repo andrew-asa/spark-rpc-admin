@@ -1,8 +1,13 @@
 package com.asa.spark.rpc.internalimp.netty;
 
+import com.asa.spark.rpc.internalimp.addr.RpcAddress;
+import com.asa.spark.rpc.internalimp.common.network.client.TransportClient;
+import com.asa.spark.rpc.internalimp.common.network.client.TransportClientBootstrap;
+import com.asa.spark.rpc.internalimp.common.network.client.TransportClientFactory;
 import com.asa.spark.rpc.internalimp.common.network.context.TransportContext;
 import com.asa.spark.rpc.internalimp.common.network.server.TransportServer;
 import com.asa.spark.rpc.internalimp.conf.SparkConf;
+import com.asa.spark.rpc.internalimp.conf.TransportConf;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpointRef;
 import com.asa.spark.rpc.internalimp.env.RpcEnv;
 import com.asa.spark.rpc.internalimp.env.RpcEnvFileServer;
@@ -11,9 +16,11 @@ import com.asa.spark.rpc.serializer.JavaSerializerInstance;
 import com.asa.spark.rpc.serializer.SerializationStream;
 import com.asa.spark.rpc.utils.ThreadUtils;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -34,6 +41,9 @@ public class NettyRpcEnv extends RpcEnv {
 
     private Dispatcher dispatcher;
 
+    private NettyStreamManager streamManager = new NettyStreamManager(this);
+
+
     private ScheduledExecutorService timeoutScheduler = ThreadUtils.newDaemonSingleThreadScheduledExecutor("netty-rpc-env-timeout");
 
     // Because TransportClientFactory.createClient is blocking, we need to run it in this thread pool
@@ -45,12 +55,17 @@ public class NettyRpcEnv extends RpcEnv {
 
     private TransportServer server;
 
-
+    private TransportConf transportConf = SparkTransportConf.fromSparkConf(
+            conf.clone().set("spark.rpc.io.numConnectionsPerPeer", "1"),
+            "rpc",
+            conf.getInt("spark.rpc.io.threads", 0));
 
     private TransportContext transportContext = new TransportContext(transportConf,
-                                                        new NettyRpcHandler(dispatcher, this, streamManager));
+                                                                     new NettyRpcHandler(dispatcher, this, streamManager));
 
-    private val clientFactory = transportContext.createClientFactory(createClientBootstraps())
+    private TransportClientFactory clientFactory = transportContext.createClientFactory(createClientBootstraps());
+
+    //private DynamicVariable currentClient = new DynamicVariable[TransportClient](null)
 
 
     public NettyRpcEnv(SparkConf conf, JavaSerializerInstance javaSerializerInstance, String host, int numUsableCores) {
@@ -104,6 +119,15 @@ public class NettyRpcEnv extends RpcEnv {
         return javaSerializerInstance.serializeStream(out);
     }
 
+    public <T> T deserialize(TransportClient client, ByteBuffer bytes) {
+        //NettyRpcEnv.currentClient.withValue(client) {
+        //    deserialize { () =>
+        //        javaSerializerInstance.deserialize[T](bytes)
+        //    }
+        //}
+        return javaSerializerInstance.deserialize(bytes);
+    }
+
     public ThreadPoolExecutor getClientConnectionExecutor() {
 
         return clientConnectionExecutor;
@@ -112,5 +136,20 @@ public class NettyRpcEnv extends RpcEnv {
     public void setClientConnectionExecutor(ThreadPoolExecutor clientConnectionExecutor) {
 
         this.clientConnectionExecutor = clientConnectionExecutor;
+    }
+
+    private List<TransportClientBootstrap> createClientBootstraps() {
+        //if (securityManager.isAuthenticationEnabled()) {
+        //    return java.util.Arrays.asList(new AuthClientBootstrap(transportConf,
+        //                                                    securityManager.getSaslUser(), securityManager));
+        //} else {
+        //    return java.util.Collections.emptyList();
+        //}
+        return java.util.Collections.emptyList();
+    }
+
+    public TransportClient createClient(RpcAddress address) throws IOException, InterruptedException {
+
+        return clientFactory.createClient(address.getHost(), address.getPort());
     }
 }

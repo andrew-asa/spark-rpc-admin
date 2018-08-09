@@ -5,6 +5,7 @@ package com.asa.spark.rpc.internalimp.conf;
  * @date 2018/8/5.
  */
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -16,7 +17,7 @@ public abstract class ConfigProvider {
     public abstract String get(String name);
 
     /** Returns all the config values in the provider. */
-    public abstract Iterable<Map.Entry<String, String>> getAll();
+    public abstract Iterator<Map.Entry<String, String>> getAll();
 
     public String get(String name, String defaultValue) {
         try {

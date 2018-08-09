@@ -11,6 +11,11 @@ public class RemoteProcessConnected implements InboxMessage {
 
     private RpcAddress remoteAddress;
 
+    public RemoteProcessConnected(RpcAddress remoteAddress) {
+
+        this.remoteAddress = remoteAddress;
+    }
+
     public RpcAddress getRemoteAddress() {
 
         return remoteAddress;

@@ -17,6 +17,7 @@
 
 package com.asa.spark.rpc.utils;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
@@ -25,25 +26,27 @@ import java.util.Properties;
  */
 public class CryptoUtils {
 
-  // The prefix for the configurations passing to Apache Commons Crypto library.
-  public static final String COMMONS_CRYPTO_CONFIG_PREFIX = "commons.crypto.";
+    // The prefix for the configurations passing to Apache Commons Crypto library.
+    public static final String COMMONS_CRYPTO_CONFIG_PREFIX = "commons.crypto.";
 
-  /**
-   * Extract the commons-crypto configuration embedded in a list of config values.
-   *
-   * @param prefix Prefix in the given configuration that identifies the commons-crypto configs.
-   * @param conf List of configuration values.
-   */
-  public static Properties toCryptoConf(String prefix, Iterable<Map.Entry<String, String>> conf) {
-    Properties props = new Properties();
-    for (Map.Entry<String, String> e : conf) {
-      String key = e.getKey();
-      if (key.startsWith(prefix)) {
-        props.setProperty(COMMONS_CRYPTO_CONFIG_PREFIX + key.substring(prefix.length()),
-          e.getValue());
-      }
+    /**
+     * Extract the commons-crypto configuration embedded in a list of config values.
+     *
+     * @param prefix Prefix in the given configuration that identifies the commons-crypto configs.
+     * @param conf   List of configuration values.
+     */
+    public static Properties toCryptoConf(String prefix, Iterator<Map.Entry<String, String>> conf) {
+
+        Properties props = new Properties();
+        for (; conf.hasNext(); ) {
+            Map.Entry<String, String> e = conf.next();
+            String key = e.getKey();
+            if (key.startsWith(prefix)) {
+                props.setProperty(COMMONS_CRYPTO_CONFIG_PREFIX + key.substring(prefix.length()),
+                                  e.getValue());
+            }
+        }
+        return props;
     }
-    return props;
-  }
 
 }

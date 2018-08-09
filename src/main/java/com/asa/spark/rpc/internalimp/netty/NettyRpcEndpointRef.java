@@ -1,6 +1,7 @@
 package com.asa.spark.rpc.internalimp.netty;
 
 import com.asa.spark.rpc.internalimp.addr.RpcEndpointAddress;
+import com.asa.spark.rpc.internalimp.common.network.client.TransportClient;
 import com.asa.spark.rpc.internalimp.conf.SparkConf;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpointRef;
 
@@ -15,6 +16,8 @@ public class NettyRpcEndpointRef extends RpcEndpointRef {
     private RpcEndpointAddress endpointAddress;
 
     private NettyRpcEnv rpcEnv;
+
+    private TransportClient client;
 
     public NettyRpcEndpointRef(SparkConf conf, RpcEndpointAddress endpointAddress, NettyRpcEnv rpcEnv) {
 
@@ -38,6 +41,16 @@ public class NettyRpcEndpointRef extends RpcEndpointRef {
 
         return endpointAddress.getRpcAddress().toString();
 
+    }
+
+    public TransportClient getClient() {
+
+        return client;
+    }
+
+    public void setClient(TransportClient client) {
+
+        this.client = client;
     }
 
     @Override
