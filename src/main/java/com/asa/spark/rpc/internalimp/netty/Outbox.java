@@ -35,7 +35,6 @@ public class Outbox {
 
     Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-
     public Outbox(NettyRpcEnv nettyEnv, RpcAddress address) {
 
         this.nettyEnv = nettyEnv;
@@ -137,8 +136,63 @@ public class Outbox {
         });
     }
 
+    /**
+     * Stop [[Inbox]] and notify the waiting messages with the cause.
+     */
+    private void handleNetworkFailure(Throwable e) {
+
+        synchronized (this) {
+            assert (connectFuture == null);
+            if (stopped) {
+                return;
+            }
+            stopped = true;
+            closeClient();
+        }
+        // Remove this Outbox from nettyEnv so that the further messages will create a new Outbox along
+        // with a new connection
+        nettyEnv.removeOutbox(address);
+
+        // Notify the connection failure for the remaining messages
+        //
+        // We always check `stopped` before updating messages, so here we can make sure no thread will
+        // update messages and it's safe to just drain the queue.
+        OutboxMessage message = messages.poll();
+        while (message != null) {
+            message.onFailure(e);
+            message = messages.poll();
+        }
+        assert (messages.isEmpty());
+    }
+
     private synchronized void closeClient() {
         // Just set client to null. Don't close it in order to reuse the connection.
         client = null;
+    }
+
+    /**
+     * Stop [[Outbox]]. The remaining messages in the [[Outbox]] will be notified with a
+     * [[SparkException]].
+     */
+    public void stop() {
+
+        synchronized (this) {
+            if (stopped) {
+                return;
+            }
+            stopped = true;
+            if (connectFuture != null) {
+                connectFuture.cancel(true);
+            }
+            closeClient();
+        }
+
+        // We always check `stopped` before updating messages, so here we can make sure no thread will
+        // update messages and it's safe to just drain the queue.
+        OutboxMessage message = messages.poll();
+        while (message != null) {
+            message.onFailure(new SparkException("Message is dropped because Outbox is stopped"));
+            message = messages.poll();
+        }
     }
 }

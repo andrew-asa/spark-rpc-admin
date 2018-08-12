@@ -6,6 +6,10 @@ package com.asa.spark.rpc.expection;
  */
 public class SparkRunTimeException extends RuntimeException {
 
+    public SparkRunTimeException() {
+
+    }
+
     public SparkRunTimeException(String msg) {
 
         super(msg);

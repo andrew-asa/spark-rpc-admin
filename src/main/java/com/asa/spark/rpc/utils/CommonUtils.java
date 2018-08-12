@@ -57,6 +57,13 @@ public class CommonUtils {
         }
     }
 
+    public static void require(boolean req) {
+
+        if (!req) {
+            throw new SparkRunTimeException();
+        }
+    }
+
     public static boolean allNotNull(Object... args) {
 
         for (Object arg : args) {

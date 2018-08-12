@@ -6,23 +6,29 @@ import com.asa.spark.rpc.internalimp.common.network.client.TransportClientBootst
 import com.asa.spark.rpc.internalimp.common.network.client.TransportClientFactory;
 import com.asa.spark.rpc.internalimp.common.network.context.TransportContext;
 import com.asa.spark.rpc.internalimp.common.network.server.TransportServer;
+import com.asa.spark.rpc.internalimp.common.network.server.TransportServerBootstrap;
 import com.asa.spark.rpc.internalimp.conf.SparkConf;
 import com.asa.spark.rpc.internalimp.conf.TransportConf;
+import com.asa.spark.rpc.internalimp.endpoint.RpcEndpoint;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpointRef;
 import com.asa.spark.rpc.internalimp.env.RpcEnv;
 import com.asa.spark.rpc.internalimp.env.RpcEnvFileServer;
-import com.asa.spark.rpc.internalimp.endpoint.RpcEndpoint;
+import com.asa.spark.rpc.internalimp.netty.msg.OutboxMessage;
 import com.asa.spark.rpc.serializer.JavaSerializerInstance;
 import com.asa.spark.rpc.serializer.SerializationStream;
+import com.asa.spark.rpc.utils.CommonUtils;
 import com.asa.spark.rpc.utils.ThreadUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author andrew_asa
@@ -55,6 +61,9 @@ public class NettyRpcEnv extends RpcEnv {
 
     private TransportServer server;
 
+    private AtomicBoolean stopped = new AtomicBoolean(false);
+
+
     private TransportConf transportConf = SparkTransportConf.fromSparkConf(
             conf.clone().set("spark.rpc.io.numConnectionsPerPeer", "1"),
             "rpc",
@@ -66,6 +75,8 @@ public class NettyRpcEnv extends RpcEnv {
     private TransportClientFactory clientFactory = transportContext.createClientFactory(createClientBootstraps());
 
     //private DynamicVariable currentClient = new DynamicVariable[TransportClient](null)
+
+    private ConcurrentHashMap<RpcAddress, Outbox> outboxes = new ConcurrentHashMap<RpcAddress, Outbox>();
 
 
     public NettyRpcEnv(SparkConf conf, JavaSerializerInstance javaSerializerInstance, String host, int numUsableCores) {
@@ -83,10 +94,99 @@ public class NettyRpcEnv extends RpcEnv {
         return null;
     }
 
+    /**
+     * Remove the address's Outbox and stop it.
+     */
+    public void removeOutbox(RpcAddress address) {
+
+        Outbox outbox = outboxes.remove(address);
+        if (outbox != null) {
+            outbox.stop();
+        }
+    }
+
+    public void startServer(String bindAddress, int port) {
+
+        List<TransportServerBootstrap> bootstraps;
+        //if (securityManager.isAuthenticationEnabled()) {
+        //    java.util.Arrays.asList(new AuthServerBootstrap(transportConf, securityManager))
+        //} else {
+        //    java.util.Collections.emptyList();
+        //}
+        bootstraps = Collections.emptyList();
+        server = transportContext.createServer(bindAddress, port, bootstraps);
+        dispatcher.registerRpcEndpoint(
+                RpcEndpointVerifier.NAME, new RpcEndpointVerifier(this, dispatcher));
+    }
+
+    @Override
+    public void stop(RpcEndpointRef endpointRef) {
+
+        CommonUtils.require(endpointRef instanceof NettyRpcEndpointRef);
+        dispatcher.stop(endpointRef);
+    }
+
+    private void postToOutbox(NettyRpcEndpointRef receiver, OutboxMessage message) {
+
+        if (receiver.getClient() != null) {
+            message.sendWith(receiver.getClient());
+        } else {
+            CommonUtils.require(receiver.getAddr() != null,
+                                "Cannot send message to client endpoint with no listen address.");
+            Outbox targetOutbox;
+            Outbox outbox = outboxes.get(receiver.getAddr());
+            if (outbox == null) {
+                Outbox newOutbox = new Outbox(this, receiver.getEndpointAddress().getRpcAddress());
+                Outbox oldOutbox = outboxes.putIfAbsent(receiver.getEndpointAddress().getRpcAddress(), newOutbox);
+                if (oldOutbox == null) {
+                    targetOutbox = newOutbox;
+                } else {
+                    targetOutbox = oldOutbox;
+                }
+            } else {
+                targetOutbox = outbox;
+            }
+            if (stopped.get()) {
+                // It's possible that we put `targetOutbox` after stopping. So we need to clean it.
+                outboxes.remove(receiver.getAddr());
+                targetOutbox.stop();
+            } else {
+                targetOutbox.send(message);
+            }
+        }
+    }
+
+    @Override
+    public RpcAddress getAddress() {
+
+        if (server != null) {
+            return new RpcAddress(host, server.getPort());
+        } else {
+            return null;
+        }
+    }
+
+    //public void send(RequestMessage message) {
+    //
+    //    RpcAddress remoteAddr = message.getReceiver().getEndpointAddress().getRpcAddress();
+    //    if (remoteAddr == address) {
+    //        // Message to a local RPC endpoint.
+    //        try {
+    //            dispatcher.postOneWayMessage(message)
+    //        } catch {
+    //            case e:
+    //                RpcEnvStoppedException =>logDebug(e.getMessage)
+    //        }
+    //    } else {
+    //        // Message to a remote RPC endpoint.
+    //        postToOutbox(message.receiver, OneWayOutboxMessage(message.serialize(this)))
+    //    }
+    //}
+
     @Override
     public RpcEndpointRef setupEndpoint(String name, RpcEndpoint endpoint) {
 
-        return null;
+        return dispatcher.registerRpcEndpoint(name, endpoint);
     }
 
     @Override
