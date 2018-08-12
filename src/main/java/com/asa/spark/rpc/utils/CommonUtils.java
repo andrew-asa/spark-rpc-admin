@@ -3,6 +3,8 @@ package com.asa.spark.rpc.utils;
 import com.asa.spark.rpc.expection.SparkRunTimeException;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -72,5 +74,14 @@ public class CommonUtils {
             }
         }
         return true;
+    }
+
+    public static <T> List<T> asList(T... els) {
+
+        List<T> ret = new ArrayList<T>();
+        for (T e : els) {
+            ret.add(e);
+        }
+        return ret;
     }
 }

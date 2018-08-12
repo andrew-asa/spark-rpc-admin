@@ -5,6 +5,7 @@ import com.asa.spark.rpc.internalimp.endpoint.ThreadSafeRpcEndpoint;
 import com.asa.spark.rpc.internalimp.netty.msg.InboxMessage;
 import com.asa.spark.rpc.internalimp.netty.msg.in.OnStart;
 import com.asa.spark.rpc.internalimp.netty.msg.in.OnStop;
+import com.asa.spark.rpc.internalimp.netty.msg.in.OneWayMessage;
 import com.asa.spark.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,10 +106,25 @@ public class Inbox {
                     break;
                 }
                 case OneWayMessage: {
-
+                    OneWayMessage oneWayMessage = (OneWayMessage) message;
+                    endpoint.receive(oneWayMessage.getContent());
                     break;
                 }
                 default:
+            }
+            synchronized (this) {
+                // "enableConcurrent" will be set to false after `onStop` is called, so we should check it
+                // every time.
+                if (!enableConcurrent && numActiveThreads != 1) {
+                    // If we are not the only one worker, exit
+                    numActiveThreads -= 1;
+                    return;
+                }
+                message = messages.poll();
+                if (message == null) {
+                    numActiveThreads -= 1;
+                    return;
+                }
             }
         }
     }
