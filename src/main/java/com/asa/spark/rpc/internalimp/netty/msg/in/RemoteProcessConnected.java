@@ -29,6 +29,6 @@ public class RemoteProcessConnected implements InboxMessage {
     @Override
     public InboxMessageType getType() {
 
-        return InboxMessageType.RemoteProcessConnectionError;
+        return InboxMessageType.RemoteProcessConnected;
     }
 }

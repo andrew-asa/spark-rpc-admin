@@ -2,6 +2,7 @@ package com.asa.spark.rpc.internalimp.endpoint;
 
 import com.asa.spark.rpc.expection.SparkException;
 import com.asa.spark.rpc.internalimp.addr.RpcAddress;
+import com.asa.spark.rpc.internalimp.env.RpcCallContext;
 import com.asa.spark.rpc.internalimp.env.RpcEnv;
 import com.asa.spark.rpc.utils.CommonUtils;
 
@@ -49,9 +50,9 @@ public abstract class RpcEndpoint {
      * Process messages from `RpcEndpointRef.ask`. If receiving a unmatched message,
      * `SparkException` will be thrown and sent to `onError`.
      */
-    //def receiveAndReply(context:RpcCallContext): PartialFunction[Any, Unit] = {
-    //    case _ => context.sendFailure(new SparkException(self + " won't reply anything"))
-    //}
+    public void receiveAndReply(Object content) {
+        //case _ => context.sendFailure(new SparkException(self + " won't reply anything"))
+    }
 
     /**
      * Invoked when any exception is thrown during handling messages.

@@ -13,6 +13,12 @@ public class RemoteProcessConnectionError implements InboxMessage {
 
     private Throwable cause;
 
+    public RemoteProcessConnectionError(Throwable cause,RpcAddress remoteAddress ) {
+
+        this.remoteAddress = remoteAddress;
+        this.cause = cause;
+    }
+
     public RpcAddress getRemoteAddress() {
 
         return remoteAddress;
@@ -36,6 +42,6 @@ public class RemoteProcessConnectionError implements InboxMessage {
     @Override
     public InboxMessageType getType() {
 
-        return InboxMessageType.RemoteProcessConnected;
+        return InboxMessageType.RemoteProcessConnectionError;
     }
 }

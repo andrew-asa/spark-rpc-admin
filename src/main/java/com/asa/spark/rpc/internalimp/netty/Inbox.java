@@ -6,11 +6,16 @@ import com.asa.spark.rpc.internalimp.netty.msg.InboxMessage;
 import com.asa.spark.rpc.internalimp.netty.msg.in.OnStart;
 import com.asa.spark.rpc.internalimp.netty.msg.in.OnStop;
 import com.asa.spark.rpc.internalimp.netty.msg.in.OneWayMessage;
+import com.asa.spark.rpc.internalimp.netty.msg.in.RemoteProcessConnected;
+import com.asa.spark.rpc.internalimp.netty.msg.in.RemoteProcessConnectionError;
+import com.asa.spark.rpc.internalimp.netty.msg.in.RemoteProcessDisconnected;
+import com.asa.spark.rpc.internalimp.netty.msg.in.RpcMessage;
 import com.asa.spark.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author andrew_asa
@@ -35,6 +40,8 @@ public class Inbox {
      * The number of threads processing messages for this inbox.
      */
     private int numActiveThreads = 0;
+
+    AtomicLong postCount = new AtomicLong(0);
 
     private Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
@@ -90,19 +97,23 @@ public class Inbox {
                     break;
                 }
                 case RemoteProcessConnected: {
-
+                    RemoteProcessConnected connected = (RemoteProcessConnected) message;
+                    endpoint.onConnected(connected.getRemoteAddress());
                     break;
                 }
                 case RemoteProcessConnectionError: {
-
+                    RemoteProcessConnectionError connectionError = (RemoteProcessConnectionError) message;
+                    endpoint.onNetworkError(connectionError.getCause(), connectionError.getRemoteAddress());
                     break;
                 }
                 case RemoteProcessDisconnected: {
-
+                    RemoteProcessDisconnected connected = (RemoteProcessDisconnected) message;
+                    endpoint.onDisconnected(connected.getRemoteAddress());
                     break;
                 }
                 case RpcMessage: {
-
+                    RpcMessage rpcMessage = (RpcMessage) message;
+                    endpoint.receiveAndReply(rpcMessage.getContent());
                     break;
                 }
                 case OneWayMessage: {
@@ -129,8 +140,9 @@ public class Inbox {
         }
     }
 
-    public void post(InboxMessage message) {
+    public synchronized void post(InboxMessage message) {
 
+        postCount.incrementAndGet();
         if (stopped) {
             // We already put "OnStop" into "messages", so we should drop further messages
             onDrop(message);
