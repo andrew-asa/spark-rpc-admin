@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * @author andrew_asa
@@ -117,6 +119,26 @@ public class Dispatcher {
         unregisterRpcEndpoint(rpcEndpointRef.getName());
     }
 
+    public synchronized void stop() {
+
+        if (stopped) {
+            return;
+        }
+        stopped = true;
+        // Stop all endpoints. This will queue all endpoints for processing by the message loops.
+        endpoints.keySet().forEach(new Consumer<String>() {
+
+            @Override
+            public void accept(String o) {
+
+                unregisterRpcEndpoint(o);
+            }
+        });
+        // Enqueue a message that tells the message loops to stop.
+        receivers.offer(PoisonPill);
+        threadpool.shutdown();
+    }
+
     /**
      * Posts a message to a specific endpoint.
      *
@@ -180,6 +202,15 @@ public class Dispatcher {
 
         postMessage(message.getReceiver().getName(), new OneWayMessage(message.getSenderAddress(), message.getContent()),
                     null);
+    }
+
+    public void awaitTermination() {
+
+        try {
+            threadpool.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 
     private class MessageLoop implements Runnable {

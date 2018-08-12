@@ -5,6 +5,8 @@ import com.asa.spark.rpc.internalimp.common.network.client.TransportClient;
 import com.asa.spark.rpc.internalimp.common.network.client.TransportClientBootstrap;
 import com.asa.spark.rpc.internalimp.common.network.client.TransportClientFactory;
 import com.asa.spark.rpc.internalimp.common.network.context.TransportContext;
+import com.asa.spark.rpc.internalimp.common.network.data.Pair;
+import com.asa.spark.rpc.internalimp.common.network.server.NoOpRpcHandler;
 import com.asa.spark.rpc.internalimp.common.network.server.TransportServer;
 import com.asa.spark.rpc.internalimp.common.network.server.TransportServerBootstrap;
 import com.asa.spark.rpc.internalimp.conf.SparkConf;
@@ -14,21 +16,30 @@ import com.asa.spark.rpc.internalimp.endpoint.RpcEndpointRef;
 import com.asa.spark.rpc.internalimp.env.RpcEnv;
 import com.asa.spark.rpc.internalimp.env.RpcEnvFileServer;
 import com.asa.spark.rpc.internalimp.netty.msg.OutboxMessage;
+import com.asa.spark.rpc.internalimp.netty.msg.in.RequestMessage;
+import com.asa.spark.rpc.internalimp.netty.msg.out.OneWayOutboxMessage;
 import com.asa.spark.rpc.serializer.JavaSerializerInstance;
 import com.asa.spark.rpc.serializer.SerializationStream;
 import com.asa.spark.rpc.utils.CommonUtils;
+import com.asa.spark.rpc.utils.StringFormatUtils;
 import com.asa.spark.rpc.utils.ThreadUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * @author andrew_asa
@@ -77,6 +88,11 @@ public class NettyRpcEnv extends RpcEnv {
     //private DynamicVariable currentClient = new DynamicVariable[TransportClient](null)
 
     private ConcurrentHashMap<RpcAddress, Outbox> outboxes = new ConcurrentHashMap<RpcAddress, Outbox>();
+
+    private TransportClientFactory fileDownloadFactory;
+
+
+    private static Logger LOGGER = LoggerFactory.getLogger(NettyRpcEnv.class);
 
 
     public NettyRpcEnv(SparkConf conf, JavaSerializerInstance javaSerializerInstance, String host, int numUsableCores) {
@@ -166,22 +182,25 @@ public class NettyRpcEnv extends RpcEnv {
         }
     }
 
-    //public void send(RequestMessage message) {
-    //
-    //    RpcAddress remoteAddr = message.getReceiver().getEndpointAddress().getRpcAddress();
-    //    if (remoteAddr == address) {
-    //        // Message to a local RPC endpoint.
-    //        try {
-    //            dispatcher.postOneWayMessage(message)
-    //        } catch {
-    //            case e:
-    //                RpcEnvStoppedException =>logDebug(e.getMessage)
-    //        }
-    //    } else {
-    //        // Message to a remote RPC endpoint.
-    //        postToOutbox(message.receiver, OneWayOutboxMessage(message.serialize(this)))
-    //    }
-    //}
+    public void send(RequestMessage message) {
+
+        RpcAddress remoteAddr = message.getReceiver().getEndpointAddress().getRpcAddress();
+        if (remoteAddr.equals(getAddress())) {
+            // Message to a local RPC endpoint.
+            try {
+                dispatcher.postOneWayMessage(message);
+            } catch (Exception e) {
+                LOGGER.info(e.getMessage(), e);
+            }
+        } else {
+            // Message to a remote RPC endpoint.
+            try {
+                postToOutbox(message.getReceiver(), new OneWayOutboxMessage(message.serialize(this)));
+            } catch (Exception e) {
+                LOGGER.info(e.getMessage(), e);
+            }
+        }
+    }
 
     @Override
     public RpcEndpointRef setupEndpoint(String name, RpcEndpoint endpoint) {
@@ -196,9 +215,62 @@ public class NettyRpcEnv extends RpcEnv {
     }
 
     @Override
-    public ReadableByteChannel openChannel(String uri) {
+    public ReadableByteChannel openChannel(String uri) throws Exception {
 
-        return null;
+        URI parsedUri = new URI(uri);
+        CommonUtils.require(parsedUri.getHost() != null, "Host name must be defined.");
+        CommonUtils.require(parsedUri.getPort() > 0, "Port must be defined.");
+        CommonUtils.require(parsedUri.getPath() != null && parsedUri.getPath() != null, "Path must be defined.");
+
+        Pipe pipe = Pipe.open();
+        FileDownloadChannel source = new FileDownloadChannel(pipe.source());
+        try {
+            TransportClient client = downloadClient(parsedUri.getHost(), parsedUri.getPort());
+            FileDownloadCallback callback = new FileDownloadCallback(pipe.sink(), source, client);
+            client.stream(parsedUri.getPath(), callback);
+        } catch (Exception e) {
+            LOGGER.info(e.getMessage(), e);
+        } finally {
+            pipe.sink().close();
+            source.close();
+        }
+
+        return source;
+    }
+
+    public TransportClient downloadClient(String host, int port) throws IOException, InterruptedException {
+
+        if (fileDownloadFactory == null) {
+            synchronized (this) {
+
+            }
+            if (fileDownloadFactory == null) {
+                String module = "files";
+                String prefix = "spark.rpc.io.";
+                SparkConf clone = conf.clone();
+
+                // Copy any RPC configuration that is not overridden in the spark.files namespace.
+                conf.getAll().forEach(new Consumer<Pair<String, String>>() {
+
+                    @Override
+                    public void accept(Pair<String, String> stringStringMap) {
+
+                        String key = stringStringMap.getKey();
+                        String value = stringStringMap.getValue();
+                        if (key.startsWith(prefix)) {
+                            String opt = key.substring(prefix.length());
+                            clone.setIfMissing(StringFormatUtils.format("spark.%s.io.%s", module, opt), value);
+                        }
+                    }
+                });
+
+                int ioThreads = clone.getInt("spark.files.io.threads", 1);
+                TransportConf downloadConf = SparkTransportConf.fromSparkConf(clone, module, ioThreads);
+                TransportContext downloadContext = new TransportContext(downloadConf, new NoOpRpcHandler(), true);
+                fileDownloadFactory = downloadContext.createClientFactory(createClientBootstraps());
+            }
+        }
+        return fileDownloadFactory.createClient(host, port);
     }
 
     public SparkConf getConf() {
@@ -251,5 +323,49 @@ public class NettyRpcEnv extends RpcEnv {
     public TransportClient createClient(RpcAddress address) throws IOException, InterruptedException {
 
         return clientFactory.createClient(address.getHost(), address.getPort());
+    }
+
+    @Override
+    public void shutdown() {
+
+        cleanUp();
+    }
+
+    @Override
+    public void awaitTermination() {
+
+        dispatcher.awaitTermination();
+    }
+
+    public void cleanUp() {
+
+        if (!stopped.compareAndSet(false, true)) {
+            return;
+        }
+
+        Iterator<Outbox> iter = outboxes.values().iterator();
+        while (iter.hasNext()) {
+            Outbox outbox = iter.next();
+            outboxes.remove(outbox.getAddress());
+            outbox.stop();
+        }
+        if (timeoutScheduler != null) {
+            timeoutScheduler.shutdownNow();
+        }
+        if (dispatcher != null) {
+            dispatcher.stop();
+        }
+        if (server != null) {
+            server.close();
+        }
+        if (clientFactory != null) {
+            clientFactory.close();
+        }
+        if (clientConnectionExecutor != null) {
+            clientConnectionExecutor.shutdownNow();
+        }
+        if (fileDownloadFactory != null) {
+            fileDownloadFactory.close();
+        }
     }
 }
