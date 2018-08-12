@@ -106,7 +106,7 @@ public abstract class RpcEnv {
      *
      * @param uri URI with location of the file.
      */
-    public abstract ReadableByteChannel openChannel(String uri);
+    public abstract ReadableByteChannel openChannel(String uri)throws Exception;
 }
 
 

@@ -1,16 +1,15 @@
 package com.asa.spark.rpc.internalimp.netty;
 
+import com.asa.spark.rpc.internalimp.common.network.data.Pair;
 import com.asa.spark.rpc.internalimp.conf.ConfigProvider;
 import com.asa.spark.rpc.internalimp.conf.SparkConf;
 import com.asa.spark.rpc.internalimp.conf.TransportConf;
 import com.asa.spark.rpc.utils.StringFormatUtils;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -53,13 +52,13 @@ public class SparkTransportConf {
             public Iterator<Map.Entry<String, String>> getAll() {
 
                 Map<String, String> ret = new HashMap<String, String>();
-                List<Map<String, String>> all = conf.getAll();
-                all.forEach(new Consumer<Map<String, String>>() {
+                List<Pair<String, String>> all = conf.getAll();
+                all.forEach(new Consumer<Pair<String, String>>() {
 
                     @Override
-                    public void accept(Map<String, String> stringStringMap) {
+                    public void accept(Pair<String, String> stringStringPair) {
 
-                        ret.putAll(stringStringMap);
+                        ret.put(stringStringPair.getKey(),stringStringPair.getValue());
                     }
                 });
                 return ret.entrySet().iterator();

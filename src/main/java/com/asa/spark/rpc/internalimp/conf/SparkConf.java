@@ -1,5 +1,7 @@
 package com.asa.spark.rpc.internalimp.conf;
 
+import com.asa.spark.rpc.internalimp.common.network.data.Pair;
+import com.asa.spark.rpc.internalimp.common.network.data.StringToStringPair;
 import com.asa.spark.rpc.utils.JavaUtils;
 
 import java.security.Key;
@@ -149,16 +151,31 @@ public class SparkConf {
     /**
      * Get all parameters as a list of pairs
      */
-    public List<Map<String, String>> getAll() {
+    //public List<Map<String, String>> getAll() {
+    //
+    //    List<Map<String, String>> ret = new ArrayList<Map<String, String>>();
+    //    settings.entrySet().forEach(new Consumer<Map.Entry<String, String>>() {
+    //
+    //        @Override
+    //        public void accept(Map.Entry<String, String> stringStringEntry) {
+    //
+    //            Map<String, String> item = new HashMap<String, String>();
+    //            item.put(stringStringEntry.getKey(), stringStringEntry.getValue());
+    //            ret.add(item);
+    //        }
+    //    });
+    //    return ret;
+    //}
 
-        List<Map<String, String>> ret = new ArrayList<Map<String, String>>();
+    public List<Pair<String, String>> getAll() {
+        List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
+
         settings.entrySet().forEach(new Consumer<Map.Entry<String, String>>() {
 
             @Override
             public void accept(Map.Entry<String, String> stringStringEntry) {
 
-                Map<String, String> item = new HashMap<String, String>();
-                item.put(stringStringEntry.getKey(), stringStringEntry.getValue());
+                Pair<String, String>item = new StringToStringPair(stringStringEntry.getKey(),stringStringEntry.getValue());
                 ret.add(item);
             }
         });

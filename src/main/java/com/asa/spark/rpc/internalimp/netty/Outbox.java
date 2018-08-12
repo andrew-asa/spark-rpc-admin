@@ -165,6 +165,16 @@ public class Outbox {
         assert (messages.isEmpty());
     }
 
+    public RpcAddress getAddress() {
+
+        return address;
+    }
+
+    public void setAddress(RpcAddress address) {
+
+        this.address = address;
+    }
+
     private synchronized void closeClient() {
         // Just set client to null. Don't close it in order to reuse the connection.
         client = null;
