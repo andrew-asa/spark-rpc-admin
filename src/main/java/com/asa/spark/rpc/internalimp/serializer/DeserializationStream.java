@@ -1,4 +1,4 @@
-package com.asa.spark.rpc.serializer;
+package com.asa.spark.rpc.internalimp.serializer;
 
 /**
  * @author andrew_asa

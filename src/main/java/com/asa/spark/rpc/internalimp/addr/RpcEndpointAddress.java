@@ -1,6 +1,7 @@
 package com.asa.spark.rpc.internalimp.addr;
 
 import com.asa.spark.rpc.expection.SparkException;
+import com.asa.spark.rpc.utils.StringFormatUtils;
 
 import java.net.URI;
 
@@ -55,7 +56,7 @@ public class RpcEndpointAddress {
     public String toString() {
 
         if (rpcAddress != null) {
-            return "spark://" + name + rpcAddress.getHost() + ":" + rpcAddress.getPort();
+            return StringFormatUtils.format("spark://%s@%s:%s",name,rpcAddress.getHost(),rpcAddress.getPort());
         } else {
             return "spark-client://" + name;
         }

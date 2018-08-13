@@ -23,6 +23,8 @@ public class RpcEnvConfig {
 
     private boolean clientMode;
 
+    private SecurityManager securityManager;
+
     public SparkConf getConf() {
 
         return conf;
@@ -91,5 +93,15 @@ public class RpcEnvConfig {
     public void setClientMode(boolean clientMode) {
 
         this.clientMode = clientMode;
+    }
+
+    public SecurityManager getSecurityManager() {
+
+        return securityManager;
+    }
+
+    public void setSecurityManager(SecurityManager securityManager) {
+
+        this.securityManager = securityManager;
     }
 }

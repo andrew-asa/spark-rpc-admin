@@ -24,7 +24,7 @@ public class RpcAddress {
 
         this.port = port;
         this.host = host;
-        this.host = host + ":" + port;
+        this.toSparkURL = host + ":" + port;
     }
 
     public String getHostPort() {

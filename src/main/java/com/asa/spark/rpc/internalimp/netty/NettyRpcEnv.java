@@ -18,8 +18,8 @@ import com.asa.spark.rpc.internalimp.env.RpcEnvFileServer;
 import com.asa.spark.rpc.internalimp.netty.msg.OutboxMessage;
 import com.asa.spark.rpc.internalimp.netty.msg.in.RequestMessage;
 import com.asa.spark.rpc.internalimp.netty.msg.out.OneWayOutboxMessage;
-import com.asa.spark.rpc.serializer.JavaSerializerInstance;
-import com.asa.spark.rpc.serializer.SerializationStream;
+import com.asa.spark.rpc.internalimp.serializer.JavaSerializerInstance;
+import com.asa.spark.rpc.internalimp.serializer.SerializationStream;
 import com.asa.spark.rpc.utils.CommonUtils;
 import com.asa.spark.rpc.utils.StringFormatUtils;
 import com.asa.spark.rpc.utils.ThreadUtils;
@@ -91,15 +91,18 @@ public class NettyRpcEnv extends RpcEnv {
 
     private TransportClientFactory fileDownloadFactory;
 
+    private com.asa.spark.rpc.internalimp.env.SecurityManager securityManager;
+
 
     private static Logger LOGGER = LoggerFactory.getLogger(NettyRpcEnv.class);
 
 
-    public NettyRpcEnv(SparkConf conf, JavaSerializerInstance javaSerializerInstance, String host, int numUsableCores) {
+    public NettyRpcEnv(SparkConf conf, JavaSerializerInstance javaSerializerInstance, String host, com.asa.spark.rpc.internalimp.env.SecurityManager securityManager, int numUsableCores) {
 
         this.conf = conf;
         this.javaSerializerInstance = javaSerializerInstance;
         this.host = host;
+        this.securityManager = securityManager;
         this.numUsableCores = numUsableCores;
         this.dispatcher = new Dispatcher(this, numUsableCores);
     }

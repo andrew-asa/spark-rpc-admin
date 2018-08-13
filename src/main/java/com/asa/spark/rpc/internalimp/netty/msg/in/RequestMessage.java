@@ -7,7 +7,7 @@ import com.asa.spark.rpc.internalimp.io.in.ByteBufferInputStream;
 import com.asa.spark.rpc.internalimp.io.out.ByteBufferOutputStream;
 import com.asa.spark.rpc.internalimp.netty.NettyRpcEndpointRef;
 import com.asa.spark.rpc.internalimp.netty.NettyRpcEnv;
-import com.asa.spark.rpc.serializer.SerializationStream;
+import com.asa.spark.rpc.internalimp.serializer.SerializationStream;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

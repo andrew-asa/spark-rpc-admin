@@ -1,4 +1,4 @@
-package com.asa.spark.rpc.serializer;
+package com.asa.spark.rpc.internalimp.serializer;
 
 import java.io.IOException;
 import java.io.OutputStream;

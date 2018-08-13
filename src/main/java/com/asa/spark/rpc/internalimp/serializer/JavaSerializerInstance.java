@@ -1,4 +1,4 @@
-package com.asa.spark.rpc.serializer;
+package com.asa.spark.rpc.internalimp.serializer;
 
 import com.asa.spark.rpc.internalimp.io.out.ByteBufferOutputStream;
 

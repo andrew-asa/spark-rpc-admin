@@ -27,7 +27,7 @@ public class SparkConf {
 
     private boolean loadDefaults;
 
-    private SparkConf() {
+    public SparkConf() {
 
         this(true);
     }
@@ -166,8 +166,8 @@ public class SparkConf {
     //    });
     //    return ret;
     //}
-
     public List<Pair<String, String>> getAll() {
+
         List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
 
         settings.entrySet().forEach(new Consumer<Map.Entry<String, String>>() {
@@ -175,11 +175,20 @@ public class SparkConf {
             @Override
             public void accept(Map.Entry<String, String> stringStringEntry) {
 
-                Pair<String, String>item = new StringToStringPair(stringStringEntry.getKey(),stringStringEntry.getValue());
+                Pair<String, String> item = new StringToStringPair(stringStringEntry.getKey(), stringStringEntry.getValue());
                 ret.add(item);
             }
         });
         return ret;
+    }
+
+    /**
+     * Does the configuration contain a given parameter?
+     */
+    public boolean contains(String key) {
+
+        return settings.containsKey(key) ||
+                configsWithAlternatives.get(key) != null;
     }
 
     /**
