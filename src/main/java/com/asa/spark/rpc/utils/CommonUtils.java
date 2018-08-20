@@ -1,14 +1,10 @@
 package com.asa.spark.rpc.utils;
 
 import com.asa.spark.rpc.expection.SparkRunTimeException;
-import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author andrew_asa
@@ -83,5 +79,16 @@ public class CommonUtils {
             ret.add(e);
         }
         return ret;
+    }
+
+
+    public static <T> List<T> enumerationToList(Enumeration<T> enumeration) {
+
+        List<T> ret = new ArrayList<T>();
+        while (enumeration.hasMoreElements()) {
+            ret.add(enumeration.nextElement());
+        }
+        return ret;
+
     }
 }

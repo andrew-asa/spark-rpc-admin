@@ -52,7 +52,8 @@ public class InboxSuite extends SparkFunSuite {
         Dispatcher dispatcher = mock(Dispatcher.class);
 
         Inbox inbox = new Inbox(endpointRef, endpoint);
-        RpcMessage message = new RpcMessage(null, "hi", null);
+        RpcMessage message = new RpcMessage(null, "" +
+                "", null);
         inbox.post(message);
         inbox.process(dispatcher);
         CommonUtils.require(inbox.isEmpty());
