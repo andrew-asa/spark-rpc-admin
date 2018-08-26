@@ -25,6 +25,18 @@ public class RpcEnvConfig {
 
     private SecurityManager securityManager;
 
+    public RpcEnvConfig(SparkConf conf, String name, String bindAddress, String advertiseAddress, int port, int numUsableCores, boolean clientMode, SecurityManager securityManager) {
+
+        this.conf = conf;
+        this.name = name;
+        this.bindAddress = bindAddress;
+        this.advertiseAddress = advertiseAddress;
+        this.port = port;
+        this.numUsableCores = numUsableCores;
+        this.clientMode = clientMode;
+        this.securityManager = securityManager;
+    }
+
     public SparkConf getConf() {
 
         return conf;

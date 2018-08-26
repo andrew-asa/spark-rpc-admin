@@ -1,9 +1,11 @@
 package com.asa.spark.rpc.internalimp.env;
 
 import com.asa.spark.rpc.internalimp.addr.RpcAddress;
+import com.asa.spark.rpc.internalimp.conf.SparkConf;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpointRef;
 import com.asa.spark.rpc.internalimp.endpoint.RpcEndpoint;
 import com.asa.spark.rpc.internalimp.netty.NettyRpcEndpointRef;
+import com.asa.spark.rpc.internalimp.netty.NettyRpcEnvFactory;
 import com.asa.spark.rpc.utils.CommonUtils;
 
 import java.nio.channels.ReadableByteChannel;
@@ -106,7 +108,25 @@ public abstract class RpcEnv {
      *
      * @param uri URI with location of the file.
      */
-    public abstract ReadableByteChannel openChannel(String uri)throws Exception;
+    public abstract ReadableByteChannel openChannel(String uri) throws Exception;
+
+    public static RpcEnv create(String name, String host, int port, SparkConf conf, SecurityManager securityManager) {
+
+        return create(name, host, port, conf, securityManager, false);
+
+    }
+
+    public static RpcEnv create(String name, String host, int port, SparkConf conf, SecurityManager securityManager, boolean clientMode) {
+
+        return create(name, host, host, port, conf, securityManager, clientMode, 0);
+    }
+
+    public static RpcEnv create(String name, String bindAddress, String advertiseAddress, int port, SparkConf conf, SecurityManager securityManager, boolean clientMode, int numUsableCores) {
+
+        RpcEnvConfig config = new RpcEnvConfig(conf, name, bindAddress, advertiseAddress, port, numUsableCores, clientMode, securityManager);
+        NettyRpcEnvFactory factory = new NettyRpcEnvFactory();
+        return factory.create(config);
+    }
 }
 
 
