@@ -1,6 +1,7 @@
 package com.asa.spark.rpc.utils;
 
 import com.asa.spark.rpc.expection.SparkRunTimeException;
+import org.slf4j.Logger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -139,5 +140,15 @@ public class CommonUtils {
         String rawFileName = rps[rps.length - 1];
         URI ur = new URI("file:///" + rawFileName);
         return ur.getPath().substring(1);
+    }
+
+    /**
+     * Utility function that should be called early in `main()` for daemons to set up some common
+     * diagnostic state.
+     */
+    public static void initDaemon(Logger log) {
+
+        log.info("Started daemon with process name: ${Utils.getProcessName()}");
+        SignalUtils.registerLogger(log);
     }
 }

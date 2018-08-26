@@ -143,7 +143,7 @@ public class TransportConf {
      */
     public int memoryMapBytes() {
         return Ints.checkedCast(JavaUtils.byteStringAsBytes(
-                conf.get("spark.storage.memoryMapThreshold", "2m")));
+                conf.get("spark.storage.memoryMapthreshold", "2m")));
     }
 
     /**

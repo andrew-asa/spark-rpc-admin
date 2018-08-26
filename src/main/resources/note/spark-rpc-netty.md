@@ -8,11 +8,20 @@ TransportRequestHandler
 ```
 
 ### TransportRequestHandler
-## StreamManager
++ ChunkFetchRequest
++  StreamManager
+
 `` NettyStramManager ``
 ````
 用于管理文件,jar的传输
 ````
+```
+文件从哪里来，什么时候添加进NettyStreamManager里面的
+```
+
++ RpcRequest
+
+
 + 什么时候才会进行添加文件、jar包
 + 为什么没有文件结构
 + 问什么目录需要单独拿出来
