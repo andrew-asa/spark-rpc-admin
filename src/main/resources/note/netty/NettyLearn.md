@@ -1,5 +1,5 @@
 ###
-[总体架构](image/netty总体架构.png)
+![总体架构](image/netty总体架构.png)
 出自netty权威指南
 
 ### 知识点
