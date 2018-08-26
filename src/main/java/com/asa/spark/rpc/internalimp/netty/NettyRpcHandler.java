@@ -60,9 +60,10 @@ public class NettyRpcHandler extends RpcHandler {
 
     }
 
-    private RequestMessage internalReceive(TransportClient client,  ByteBuffer message) throws IOException {
-        InetSocketAddress addr = (InetSocketAddress)client.getChannel().remoteAddress();
-        assert(addr != null);
+    private RequestMessage internalReceive(TransportClient client, ByteBuffer message) throws IOException {
+
+        InetSocketAddress addr = (InetSocketAddress) client.getChannel().remoteAddress();
+        assert (addr != null);
         RpcAddress clientAddr = new RpcAddress(addr.getHostString(), addr.getPort());
         RequestMessage requestMessage = new RequestMessage().apply(nettyEnv, client, message);
         if (requestMessage.getSenderAddress() == null) {

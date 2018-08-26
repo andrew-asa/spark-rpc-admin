@@ -14,4 +14,9 @@ public class SparkRunTimeException extends RuntimeException {
 
         super(msg);
     }
+
+    public SparkRunTimeException(String msgPatter, Object... args) {
+
+        super(String.format(msgPatter, args));
+    }
 }

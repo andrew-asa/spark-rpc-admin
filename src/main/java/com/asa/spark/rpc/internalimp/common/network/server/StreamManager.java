@@ -30,7 +30,7 @@ import io.netty.channel.Channel;
  * serially and that once the connection associated with the stream is closed, that stream will
  * never be used again.
  */
-public abstract class StreamManager {
+public interface  StreamManager {
     /**
      * Called in response to a fetchChunk() request. The returned buffer will be passed as-is to the
      * client. A single stream will be associated with a single TCP connection, so this method
@@ -56,9 +56,7 @@ public abstract class StreamManager {
      * @param streamId id of a stream that has been previously registered with the StreamManager.
      * @return A managed buffer for the stream, or null if the stream was not found.
      */
-    public ManagedBuffer openStream(String streamId) {
-        throw new UnsupportedOperationException();
-    }
+    public ManagedBuffer openStream(String streamId) ;
 
     /**
      * Associates a stream with a single client connection, which is guaranteed to be the only reader
@@ -68,46 +66,43 @@ public abstract class StreamManager {
      * This must be called before the first getChunk() on the stream, but it may be invoked multiple
      * times with the same channel and stream id.
      */
-    public void registerChannel(Channel channel, long streamId) { }
+    public void registerChannel(Channel channel, long streamId);
 
     /**
      * Indicates that the given channel has been terminated. After this occurs, we are guaranteed not
      * to read from the associated streams again, so any state can be cleaned up.
      */
-    public void connectionTerminated(Channel channel) { }
+    public void connectionTerminated(Channel channel) ;
 
     /**
      * Verify that the client is authorized to read from the given stream.
      *
      * @throws SecurityException If client is not authorized.
      */
-    public void checkAuthorization(TransportClient client, long streamId) { }
+    public void checkAuthorization(TransportClient client, long streamId) ;
 
     /**
      * Return the number of chunks being transferred and not finished yet in this StreamManager.
      */
-    public long chunksBeingTransferred() {
-        return 0;
-    }
-
+    public long chunksBeingTransferred() ;
     /**
      * Called when start sending a chunk.
      */
-    public void chunkBeingSent(long streamId) { }
+    public void chunkBeingSent(long streamId)  ;
 
     /**
      * Called when start sending a stream.
      */
-    public void streamBeingSent(String streamId) { }
+     void streamBeingSent(String streamId);
 
     /**
      * Called when a chunk is successfully sent.
      */
-    public void chunkSent(long streamId) { }
+    public void chunkSent(long streamId) ;
 
     /**
      * Called when a stream is successfully sent.
      */
-    public void streamSent(String streamId) { }
+    public void streamSent(String streamId)  ;
 
 }

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * StreamManager which allows registration of an Iterator&lt;ManagedBuffer&gt;, which are
  * individually fetched as chunks by the client. Each registered buffer is one chunk.
  */
-public class OneForOneStreamManager extends StreamManager {
+public class OneForOneStreamManager implements StreamManager {
   private static final Logger logger = LoggerFactory.getLogger(OneForOneStreamManager.class);
 
   private final AtomicLong nextStreamId;

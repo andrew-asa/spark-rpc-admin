@@ -1,7 +1,13 @@
-### 思考点
+###
+[总体架构](image/netty总体架构.png)
+出自netty权威指南
+
+### 知识点
 + [``网络的粘包以及拆包``](./Netty粘包以及拆包.md)
 + [``线程模型``](./Netty线程处理模型.md)
 + [``事件处理模型``](./Netty事件处理模型.md)
++ [``ByteBuf``](./Netty-ByteBuf.md)
++ [``参数``](./Netty参数.md)
 
 ### Q&A
 + ``为什么需要放两个EventLoopGroup``

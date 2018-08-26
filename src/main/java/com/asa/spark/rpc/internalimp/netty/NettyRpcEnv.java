@@ -371,4 +371,14 @@ public class NettyRpcEnv extends RpcEnv {
             fileDownloadFactory.close();
         }
     }
+
+    public TransportConf getTransportConf() {
+
+        return transportConf;
+    }
+
+    public void setTransportConf(TransportConf transportConf) {
+
+        this.transportConf = transportConf;
+    }
 }
